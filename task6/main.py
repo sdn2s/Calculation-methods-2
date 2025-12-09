@@ -4,11 +4,6 @@ import math
 import numpy as np
 import scipy.sparse as sp
 
-
-# ------------------------
-# Параметры задачи
-# ------------------------
-
 a = 0.0
 b = 1.0
 
@@ -18,7 +13,6 @@ def p(x: float) -> float:
 
 
 def r(x: float) -> float:
-    # коэффициент при производной в задаче из варианта 9
     return 2.0 * x
 
 
@@ -28,14 +22,7 @@ def f_rhs(x: float) -> float:
 
 
 def q(x: float) -> float:
-    # коэффициент при u (если понадобится в других задачах)
     return x * x + 1.0
-
-
-# ------------------------
-# Интегралы от базисных функций (КЭ вида "шляпка")
-# ------------------------
-
 
 def integ_phi_i(f_fun, x: float, h: float) -> float:
     """Интеграл f(x)*phi_i(x) ~ f в средней точке * площадь треугольника."""
@@ -60,11 +47,6 @@ def integ_der_ii(f_fun, x: float, h: float) -> float:
 def integ_der_ij(f_fun, x: float, h: float) -> float:
     """Интеграл f(x)*phi_i'(x)*phi_{i+1}'(x)."""
     return -f_fun(x + 1.5 * h) / h
-
-
-# ------------------------
-# Построение матрицы жесткости
-# ------------------------
 
 
 def build_stiffness_matrix(p_fun, r_fun, N: int):
@@ -96,12 +78,6 @@ def build_stiffness_matrix(p_fun, r_fun, N: int):
         K[i + 1, i] = A[i]
 
     return K.tocsr()
-
-
-# ------------------------
-# Степенной метод (максимальное собственное число)
-# ------------------------
-
 
 def power_method(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 1_000_000, y0=None):
     """
@@ -137,13 +113,6 @@ def power_method(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 1_000_000,
 
     elapsed = time.time() - start
     return lambda_old, v / np.linalg.norm(v), max_iter, res_norm, elapsed
-
-
-# ------------------------
-# Степенной метод для минимального собственного числа
-# (через итерации с решением систем K w = v)
-# ------------------------
-
 
 def power_method_min_eigen(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 1_000_000, y0=None):
     """
@@ -187,12 +156,6 @@ def power_method_min_eigen(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 
     res_norm = np.linalg.norm(res_vec) / np.linalg.norm(v)
     elapsed = time.time() - start
     return lambda_min, v, max_iter, res_norm, elapsed
-
-
-# ------------------------
-# Метод Якоби для полной проблемы собственных значений
-# ------------------------
-
 
 def jacobi_eigen(K: np.ndarray, eps: float = 1e-5, max_iter: int = 100_000):
     """
@@ -249,11 +212,6 @@ def jacobi_eigen(K: np.ndarray, eps: float = 1e-5, max_iter: int = 100_000):
     return eigenvalues, eigenvectors, it
 
 
-# ------------------------
-# Подсчёт норм невязки для набора собственных пар
-# ------------------------
-
-
 def residuals_for_eigenpairs(K: np.ndarray, eigenvalues: np.ndarray, eigenvectors: np.ndarray):
     """
     Для каждой пары (λ_i, e_i) считает норму невязки ||K e_i - λ_i e_i||_2.
@@ -267,12 +225,6 @@ def residuals_for_eigenpairs(K: np.ndarray, eigenvalues: np.ndarray, eigenvector
         r_vec = K @ v - lam * v
         res[i] = np.linalg.norm(r_vec)
     return res
-
-
-# ------------------------
-# Основной запуск (пример)
-# ------------------------
-
 
 if __name__ == "__main__":
     # 1. Построение матрицы жесткости

@@ -36,7 +36,7 @@ def c(x, t):
 
 def progonka(K, F):
     """
-    Метод прогонки (Томаса) для трёхдиагональной системы:
+    Метод прогонки для трёхдиагональной системы:
         K * y = F
     K — квадратная матрица (numpy.ndarray) размера n x n,
     F — вектор длины n.
@@ -157,8 +157,6 @@ def neyav(f_fun, g_fun, a_fun, N, M, beta_fun, alpha_fun, sigma):
 
         # решаем трёхдиагональную систему
         u2[j, :] = progonka(A, d)
-        # при желании можно использовать np.linalg.solve(A, d)
-
     return u2
 
 
@@ -182,7 +180,6 @@ def matr_to_6x6(u):
 
 
 if __name__ == "__main__":
-    # Ввод N_ex: количество промежутков по x (обычно кратно 5: 5, 10, 20, ...)
     N_ex = int(input("Введите количество промежутков по x (например, 5, 10, 20): "))
 
     h_ex = 1.0 / N_ex
@@ -230,8 +227,6 @@ if __name__ == "__main__":
     shod_yav[1, 1] = 0.1**2 / 8.0
     shod_yav[2, 1] = 0.05**2 / 8.0
 
-    # ВНИМАНИЕ: здесь, как и в оригинальном коде, для u_exact берётся сетка,
-    # построенная по введённому N_ex, а не по 5, 10, 20.
     shod_yav[0, 2] = np.max(np.abs(matr_to_6x6(u_exact) - matr_to_6x6(yav(f, g, a, 5, beta, alpha))))
     shod_yav[1, 2] = np.max(np.abs(matr_to_6x6(u_exact) - matr_to_6x6(yav(f, g, a, 10, beta, alpha))))
     shod_yav[2, 2] = np.max(np.abs(matr_to_6x6(u_exact) - matr_to_6x6(yav(f, g, a, 20, beta, alpha))))

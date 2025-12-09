@@ -107,8 +107,7 @@ def coef(p_fun, r_fun, f_fun, N):
 
 def define_sigma(K, N):
     """
-    Подбор шага sigma по сумме элементов в столбцах,
-    как в исходном коде.
+    Подбор шага sigma по сумме элементов в столбцах
     """
     Kd = K.toarray()
     sum_of_elem = np.zeros(N - 1)
@@ -209,8 +208,7 @@ def Jacoby(K, G, err, maxNum, N, sigma):
 
 def Transformation_matrix(N):
     """
-    Матрица преобразования C (N-1 x N-1),
-    как в исходном коде, но с возвратом csr.
+    Матрица преобразования C (N-1 x N-1) с возвратом csr.
     """
     n = int(math.sqrt(N))
     C = sp.lil_matrix((N - 1, N - 1))
