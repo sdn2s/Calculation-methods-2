@@ -179,7 +179,8 @@ def Jacoby(K, G, err, maxNum, N, sigma):
     sigma — шаг.
     Возвращает:
       u_new — ndarray длины N-1,
-      work_time — время работы.
+      work_time — время работы,
+      counter — число итераций.
     """
     start_time = time.time()
 
@@ -190,7 +191,9 @@ def Jacoby(K, G, err, maxNum, N, sigma):
     u_old = np.zeros(n)
     u_new = np.zeros(n)
 
+    counter = 0
     for _ in range(maxNum):
+        counter += 1
         u_old = u_new.copy()
         r = K.dot(u_old) - G_arr
         u_new = u_old - sigma * D_inv * r
@@ -198,7 +201,7 @@ def Jacoby(K, G, err, maxNum, N, sigma):
             break
 
     work_time = time.time() - start_time
-    return u_new, work_time
+    return u_new, work_time, counter
 
 
 # ------------------------
@@ -337,7 +340,7 @@ if __name__ == "__main__":
     y_prog, time_prog = progonka(K, F, N)
 
     # Якоби
-    y_jac, time_jac = Jacoby(K, F, 1e-4, 10000, N, sigma)
+    y_jac, time_jac, jac_iter = Jacoby(K, F, 1e-4, 10000, N, sigma)
 
     xh = np.arange(h, 1.0, h)
 
@@ -348,7 +351,7 @@ if __name__ == "__main__":
     K1, F1 = coef(p, r, f, N1)
     sigma1 = define_sigma(K1, N1)
 
-    y_decomp, time_decomp, counter = decomp(K1, F1, 1e-4, 10000, N1, sigma1)
+    y_decomp, time_decomp, decomp_iter = decomp(K1, F1, 1e-4, 10000, N1, sigma1)
     xhD = np.arange(h1, 1.0, h1)
 
     # Таблица значений
@@ -361,8 +364,9 @@ if __name__ == "__main__":
         time_jac,
         " Декомпозиция: ",
         time_decomp,
-        " сек\n",
+        " сек",
     )
+    print("Число итераций: Якоби =", jac_iter, ", декомпозиция =", decomp_iter, "\n")
 
     print("x".center(3), "U1(x)".center(15), "U2(x)".center(15), "U3(x)".center(15))
     for i in range(1, 10):
@@ -399,7 +403,9 @@ if __name__ == "__main__":
             )
         )
 
-    # Графики
+    # ------------------------
+    # Графики решений для фиксированного N
+    # ------------------------
     plt.figure(figsize=(12, 7))
 
     plt.subplot(1, 3, 1)
@@ -422,4 +428,62 @@ if __name__ == "__main__":
     plt.plot(xhD, y_decomp)
 
     plt.tight_layout()
+
+    # ------------------------
+    # Графики: погрешность от N и число итераций от N
+    # ------------------------
+
+    Ns = [25, 49, 100, 196, 400]  # квадраты, чтобы работала декомпозиция области
+
+    errors_jac = []
+    errors_decomp = []
+    iters_jac = []
+    iters_decomp = []
+
+    for N_test in Ns:
+        K_test, F_test = coef(p, r, f, N_test)
+        sigma_test = define_sigma(K_test, N_test)
+
+        # "Точное" решение для данного N — прогонка
+        y_prog_test, _ = progonka(K_test, F_test, N_test)
+
+        # Якоби
+        y_jac_test, _, jac_iter_test = Jacoby(
+            K_test, F_test, 1e-4, 10000, N_test, sigma_test
+        )
+
+        # Декомпозиция (N_test квадрат, как нужно)
+        y_decomp_test, _, decomp_iter_test = decomp(
+            K_test, F_test, 1e-4, 10000, N_test, sigma_test
+        )
+
+        # Погрешности относительно решения прогонкой
+        err_j = np.linalg.norm(y_jac_test - y_prog_test)
+        err_d = np.linalg.norm(y_decomp_test - y_prog_test)
+
+        errors_jac.append(err_j)
+        errors_decomp.append(err_d)
+        iters_jac.append(jac_iter_test)
+        iters_decomp.append(decomp_iter_test)
+
+    # График погрешности от N
+    plt.figure(figsize=(7, 5))
+    plt.grid(True)
+    plt.title("Зависимость погрешности от N")
+    plt.xlabel("N")
+    plt.ylabel("||u_iter - u_prog||_2")
+    plt.plot(Ns, errors_jac, marker="o", label="Якоби")
+    plt.plot(Ns, errors_decomp, marker="s", label="Декомпозиция")
+    plt.legend()
+
+    # График числа итераций от N
+    plt.figure(figsize=(7, 5))
+    plt.grid(True)
+    plt.title("Зависимость числа итераций от N")
+    plt.xlabel("N")
+    plt.ylabel("Число итераций")
+    plt.plot(Ns, iters_jac, marker="o", label="Якоби")
+    plt.plot(Ns, iters_decomp, marker="s", label="Декомпозиция")
+    plt.legend()
+
     plt.show()
