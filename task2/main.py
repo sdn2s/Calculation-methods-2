@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def exact_solution(x, t):
@@ -7,7 +8,11 @@ def exact_solution(x, t):
 
 
 def f(x, t):
-    return (2 * np.cos(2 * t + 1) + 4 * np.sin(2 * t + 1) + np.sin(x) * np.sin(2 * t + 1)) * np.cos(2 * x)
+    return (
+        2 * np.cos(2 * t + 1)
+        + 4 * np.sin(2 * t + 1)
+        + np.sin(x) * np.sin(2 * t + 1)
+    ) * np.cos(2 * x)
 
 
 def g(x):
@@ -37,7 +42,7 @@ def c(x, t):
 def progonka(K, F):
     """
     Метод прогонки для трёхдиагональной системы:
-        K * y = F
+    K * y = F
     K — квадратная матрица (numpy.ndarray) размера n x n,
     F — вектор длины n.
     Возвращает вектор y длины n.
@@ -73,9 +78,9 @@ def progonka(K, F):
 def yav(f_fun, g_fun, a_fun, N, beta_fun, alpha_fun):
     """
     Явная схема:
-      - шаг по x: h = 1/N
-      - шаг по t: tau = h^2/8
-      - T = 0.1
+    - шаг по x: h = 1/N
+    - шаг по t: tau = h^2/8
+    - T = 0.1
     """
     h = 1.0 / N
     tau = h**2 / 8.0
@@ -99,11 +104,12 @@ def yav(f_fun, g_fun, a_fun, N, beta_fun, alpha_fun):
         # внутренние узлы
         for i in range(1, N):
             x_i = h * i
-
-            Lu = a_fun(x_i, t_prev) * (u[j - 1, i + 1] - 2 * u[j - 1, i] + u[j - 1, i - 1]) / (h**2)
+            Lu = a_fun(x_i, t_prev) * (
+                u[j - 1, i + 1] - 2 * u[j - 1, i] + u[j - 1, i - 1]
+            ) / (h**2)
             u[j, i] = u[j - 1, i] + tau * (Lu + f_fun(x_i, t_prev))
 
-        # правое граничное условие (по условию задачи)
+        # правое граничное условие
         u[j, N] = beta_fun(t_cur)
 
     return u
@@ -112,8 +118,8 @@ def yav(f_fun, g_fun, a_fun, N, beta_fun, alpha_fun):
 def neyav(f_fun, g_fun, a_fun, N, M, beta_fun, alpha_fun, sigma):
     """
     Неявная разностная схема с весами:
-      - шаг по x: h = 1/N
-      - шаг по t: tau = 0.1/M
+    - шаг по x: h = 1/N
+    - шаг по t: tau = 0.1/M
     sigma — параметр схемы (0, 0.5, 1 и т.д.).
     """
     h = 1.0 / N
@@ -146,17 +152,33 @@ def neyav(f_fun, g_fun, a_fun, N, M, beta_fun, alpha_fun, sigma):
                 A[i, i] = -1.0
             else:
                 x_i = h * i
+                Lu1 = a_fun(x_i, t_prev) * (
+                    u2[j - 1, i + 1]
+                    - 2 * u2[j - 1, i]
+                    + u2[j - 1, i - 1]
+                ) / (h**2)
 
-                Lu1 = a_fun(x_i, t_prev) * (u2[j - 1, i + 1] - 2 * u2[j - 1, i] + u2[j - 1, i - 1]) / (h**2)
-                d[i] = -u2[j - 1, i] / tau - (1.0 - sigma) * Lu1 - f_fun(x_i, t_prev + sigma * tau)
+                d[i] = (
+                    -u2[j - 1, i] / tau
+                    - (1.0 - sigma) * Lu1
+                    - f_fun(x_i, t_prev + sigma * tau)
+                )
 
-                A[i, i] = -((1.0 / tau) + sigma * (2 * a_fun(x_i, t_cur)) / (h**2) - sigma * c(x_i, t_cur))
-
-                A[i, i - 1] = sigma * (a_fun(x_i, t_cur) / (h**2) - b(x_i, t_cur) / (2 * h))
-                A[i, i + 1] = sigma * (a_fun(x_i, t_cur) / (h**2) + b(x_i, t_cur) / (2 * h))
+                A[i, i] = -(
+                    (1.0 / tau)
+                    + sigma * (2 * a_fun(x_i, t_cur)) / (h**2)
+                    - sigma * c(x_i, t_cur)
+                )
+                A[i, i - 1] = sigma * (
+                    a_fun(x_i, t_cur) / (h**2) - b(x_i, t_cur) / (2 * h)
+                )
+                A[i, i + 1] = sigma * (
+                    a_fun(x_i, t_cur) / (h**2) + b(x_i, t_cur) / (2 * h)
+                )
 
         # решаем трёхдиагональную систему
         u2[j, :] = progonka(A, d)
+
     return u2
 
 
@@ -166,6 +188,7 @@ def matr_to_6x6(u):
     значений, равномерно распределённых по времени и по x.
     """
     u_out = np.zeros((6, 6))
+
     M1 = u.shape[0] - 1
     N1 = u.shape[1] - 1
 
@@ -181,7 +204,6 @@ def matr_to_6x6(u):
 
 if __name__ == "__main__":
     N_ex = int(input("Введите количество промежутков по x (например, 5, 10, 20): "))
-
     h_ex = 1.0 / N_ex
     tau_ex = h_ex**2 / 8.0
     T = 0.1
@@ -227,12 +249,37 @@ if __name__ == "__main__":
     shod_yav[1, 1] = 0.1**2 / 8.0
     shod_yav[2, 1] = 0.05**2 / 8.0
 
-    shod_yav[0, 2] = np.max(np.abs(matr_to_6x6(u_exact) - matr_to_6x6(yav(f, g, a, 5, beta, alpha))))
-    shod_yav[1, 2] = np.max(np.abs(matr_to_6x6(u_exact) - matr_to_6x6(yav(f, g, a, 10, beta, alpha))))
-    shod_yav[2, 2] = np.max(np.abs(matr_to_6x6(u_exact) - matr_to_6x6(yav(f, g, a, 20, beta, alpha))))
+    shod_yav[0, 2] = np.max(
+        np.abs(
+            matr_to_6x6(u_exact)
+            - matr_to_6x6(yav(f, g, a, 5, beta, alpha))
+        )
+    )
+    shod_yav[1, 2] = np.max(
+        np.abs(
+            matr_to_6x6(u_exact)
+            - matr_to_6x6(yav(f, g, a, 10, beta, alpha))
+        )
+    )
+    shod_yav[2, 2] = np.max(
+        np.abs(
+            matr_to_6x6(u_exact)
+            - matr_to_6x6(yav(f, g, a, 20, beta, alpha))
+        )
+    )
 
-    shod_yav[1, 3] = np.max(np.abs(matr_to_6x6(yav(f, g, a, 10, beta, alpha)) - matr_to_6x6(yav(f, g, a, 5, beta, alpha))))
-    shod_yav[2, 3] = np.max(np.abs(matr_to_6x6(yav(f, g, a, 20, beta, alpha)) - matr_to_6x6(yav(f, g, a, 10, beta, alpha))))
+    shod_yav[1, 3] = np.max(
+        np.abs(
+            matr_to_6x6(yav(f, g, a, 10, beta, alpha))
+            - matr_to_6x6(yav(f, g, a, 5, beta, alpha))
+        )
+    )
+    shod_yav[2, 3] = np.max(
+        np.abs(
+            matr_to_6x6(yav(f, g, a, 20, beta, alpha))
+            - matr_to_6x6(yav(f, g, a, 10, beta, alpha))
+        )
+    )
 
     table_shod = pd.DataFrame(
         shod_yav,
@@ -246,46 +293,59 @@ if __name__ == "__main__":
     # сходимость неявной схемы при разных sigma
     for KJ in range(0, 3):
         sigma_neyav = 0.5 * KJ
-        shod_neyav = np.zeros((3, 4))
 
+        shod_neyav = np.zeros((3, 4))
         shod_neyav[0, 0] = 0.2
         shod_neyav[1, 0] = 0.1
         shod_neyav[2, 0] = 0.05
 
         # шаги по времени для M = 20, 80, 320
-        shod_neyav[0, 1] = 0.005       # 0.1 / 20
-        shod_neyav[1, 1] = 0.1**2 / 8  # M = 80
-        shod_neyav[2, 1] = 0.05**2 / 8  # M = 320
+        shod_neyav[0, 1] = 0.005          # 0.1 / 20
+        shod_neyav[1, 1] = 0.1**2 / 8     # M = 80 (как в исходном коде)
+        shod_neyav[2, 1] = 0.05**2 / 8    # M = 320
 
         shod_neyav[0, 2] = np.max(
             np.abs(
                 matr_to_6x6(u_exact)
-                - matr_to_6x6(neyav(f, g, a, 5, 20, beta, alpha, sigma_neyav))
+                - matr_to_6x6(
+                    neyav(f, g, a, 5, 20, beta, alpha, sigma_neyav)
+                )
             )
         )
         shod_neyav[1, 2] = np.max(
             np.abs(
                 matr_to_6x6(u_exact)
-                - matr_to_6x6(neyav(f, g, a, 10, 80, beta, alpha, sigma_neyav))
+                - matr_to_6x6(
+                    neyav(f, g, a, 10, 80, beta, alpha, sigma_neyav)
+                )
             )
         )
         shod_neyav[2, 2] = np.max(
             np.abs(
                 matr_to_6x6(u_exact)
-                - matr_to_6x6(neyav(f, g, a, 20, 320, beta, alpha, sigma_neyav))
+                - matr_to_6x6(
+                    neyav(f, g, a, 20, 320, beta, alpha, sigma_neyav)
+                )
             )
         )
-
         shod_neyav[1, 3] = np.max(
             np.abs(
-                matr_to_6x6(neyav(f, g, a, 10, 80, beta, alpha, sigma_neyav))
-                - matr_to_6x6(neyav(f, g, a, 5, 20, beta, alpha, sigma_neyav))
+                matr_to_6x6(
+                    neyav(f, g, a, 10, 80, beta, alpha, sigma_neyav)
+                )
+                - matr_to_6x6(
+                    neyav(f, g, a, 5, 20, beta, alpha, sigma_neyav)
+                )
             )
         )
         shod_neyav[2, 3] = np.max(
             np.abs(
-                matr_to_6x6(neyav(f, g, a, 20, 320, beta, alpha, sigma_neyav))
-                - matr_to_6x6(neyav(f, g, a, 10, 80, beta, alpha, sigma_neyav))
+                matr_to_6x6(
+                    neyav(f, g, a, 20, 320, beta, alpha, sigma_neyav)
+                )
+                - matr_to_6x6(
+                    neyav(f, g, a, 10, 80, beta, alpha, sigma_neyav)
+                )
             )
         )
 
@@ -294,23 +354,86 @@ if __name__ == "__main__":
             index=[1, 2, 3],
             columns=["h", "tau", "||u_ex - u(h,tau)||", "||u(2h,tau) - u(h,tau)||"],
         )
-
         print("Сходимость схемы c весами при sigma = " + str(sigma_neyav))
         print(table_shod_ne)
 
     print("Результаты вычислений для явной схемы N = " + str(N_ex))
     print(table_u)
 
-    print("Результаты вычислений для неявной схемы N = " + str(N_ex) + " sigma = " + str(0.0))
+    print(
+        "Результаты вычислений для неявной схемы N = "
+        + str(N_ex)
+        + " sigma = "
+        + str(0.0)
+    )
     print(table_u2)
 
     # отдельно считаем неявную схему для sigma = 0.5 и 1
     for sigma_val in [0.5, 1.0]:
         u2_sigma = neyav(f, g, a, N_ex, M_ex, beta, alpha, sigma_val)
         u2_sigma_out = matr_to_6x6(u2_sigma)
-        table_u2_sigma = pd.DataFrame(u2_sigma_out, index=index_t, columns=columns_x)
-        print("Результаты вычислений для неявной схемы N = " + str(N_ex) + " sigma = " + str(sigma_val))
+        table_u2_sigma = pd.DataFrame(
+            u2_sigma_out, index=index_t, columns=columns_x
+        )
+        print(
+            "Результаты вычислений для неявной схемы N = "
+            + str(N_ex)
+            + " sigma = "
+            + str(sigma_val)
+        )
         print(table_u2_sigma)
 
     print("Таблица точного решения N = " + str(N_ex))
     print(table_u_ex)
+
+    # -----------------------------
+    # Графики решения для 3 временных слоёв
+    # -----------------------------
+
+    # индексы временных слоёв: начальный, середина, конечный
+    times_to_plot = [0, M_ex // 2, M_ex]
+    x_vals = np.linspace(0.0, 1.0, N_ex + 1)
+
+    # явная схема + точное решение
+    plt.figure(figsize=(8, 6))
+    for k in times_to_plot:
+        plt.plot(
+            x_vals,
+            u[k, :],
+            label=f"явная, t = {k * tau_ex:.3f}",
+        )
+    for k in times_to_plot:
+        plt.plot(
+            x_vals,
+            u_exact[k, :],
+            "--",
+            label=f"точное, t = {k * tau_ex:.3f}",
+        )
+    plt.title("Срезы решения u(x,t): явная схема и точное решение")
+    plt.xlabel("x")
+    plt.ylabel("u(x,t)")
+    plt.grid(True)
+    plt.legend()
+
+    # неявная схема (sigma=0) + точное решение
+    plt.figure(figsize=(8, 6))
+    for k in times_to_plot:
+        plt.plot(
+            x_vals,
+            u2[k, :],
+            label=f"неявная, t = {k * tau_ex:.3f}",
+        )
+    for k in times_to_plot:
+        plt.plot(
+            x_vals,
+            u_exact[k, :],
+            "--",
+            label=f"точное, t = {k * tau_ex:.3f}",
+        )
+    plt.title("Срезы решения u(x,t): неявная схема (sigma=0) и точное решение")
+    plt.xlabel("x")
+    plt.ylabel("u(x,t)")
+    plt.grid(True)
+    plt.legend()
+
+    plt.show()
