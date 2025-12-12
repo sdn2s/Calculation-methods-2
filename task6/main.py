@@ -24,6 +24,7 @@ def f_rhs(x: float) -> float:
 def q(x: float) -> float:
     return x * x + 1.0
 
+
 def integ_phi_i(f_fun, x: float, h: float) -> float:
     """Интеграл f(x)*phi_i(x) ~ f в средней точке * площадь треугольника."""
     return f_fun(x + h) * h
@@ -79,16 +80,26 @@ def build_stiffness_matrix(p_fun, r_fun, N: int):
 
     return K.tocsr()
 
-def power_method(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 1_000_000, y0=None):
+
+def power_method(
+    K: sp.csr_matrix,
+    eps: float = 1e-7,
+    max_iter: int = 1_000_000,
+    y0=None,
+):
     """
     Степенной метод для поиска наибольшего по модулю собственного значения матрицы K.
     K — csr_matrix (n x n).
+
     Возвращает:
       lambda_max, eigenvector, iterations, residual_norm, elapsed_time.
     """
     n = K.shape[0]
+
     if y0 is None:
-        v = np.ones(n, dtype=float)
+        # Улучшенный выбор начального вектора: y0_j = (-1)^j, j = 1,...,n
+        # Это увеличивает проекцию на собственный вектор при lambda_max
+        v = np.fromiter(((-1.0) ** (j + 1) for j in range(n)), dtype=float)
     else:
         v = np.asarray(y0, dtype=float).copy()
         if v.shape[0] != n:
@@ -114,7 +125,13 @@ def power_method(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 1_000_000,
     elapsed = time.time() - start
     return lambda_old, v / np.linalg.norm(v), max_iter, res_norm, elapsed
 
-def power_method_min_eigen(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 1_000_000, y0=None):
+
+def power_method_min_eigen(
+    K: sp.csr_matrix,
+    eps: float = 1e-7,
+    max_iter: int = 1_000_000,
+    y0=None,
+):
     """
     Степенной метод для минимального собственного числа:
     применяем степенной метод к матрице K^{-1}, но явно обратную не строим,
@@ -125,6 +142,7 @@ def power_method_min_eigen(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 
     """
     n = K.shape[0]
     K_dense = K.toarray()  # один раз
+
     if y0 is None:
         v = np.ones(n, dtype=float)
     else:
@@ -156,6 +174,7 @@ def power_method_min_eigen(K: sp.csr_matrix, eps: float = 1e-7, max_iter: int = 
     res_norm = np.linalg.norm(res_vec) / np.linalg.norm(v)
     elapsed = time.time() - start
     return lambda_min, v, max_iter, res_norm, elapsed
+
 
 def jacobi_eigen(K: np.ndarray, eps: float = 1e-5, max_iter: int = 100_000):
     """
@@ -212,7 +231,11 @@ def jacobi_eigen(K: np.ndarray, eps: float = 1e-5, max_iter: int = 100_000):
     return eigenvalues, eigenvectors, it
 
 
-def residuals_for_eigenpairs(K: np.ndarray, eigenvalues: np.ndarray, eigenvectors: np.ndarray):
+def residuals_for_eigenpairs(
+    K: np.ndarray,
+    eigenvalues: np.ndarray,
+    eigenvectors: np.ndarray,
+):
     """
     Для каждой пары (λ_i, e_i) считает норму невязки ||K e_i - λ_i e_i||_2.
     Возвращает массив невязок той же длины.
@@ -225,6 +248,7 @@ def residuals_for_eigenpairs(K: np.ndarray, eigenvalues: np.ndarray, eigenvector
         r_vec = K @ v - lam * v
         res[i] = np.linalg.norm(r_vec)
     return res
+
 
 if __name__ == "__main__":
     # 1. Построение матрицы жесткости
